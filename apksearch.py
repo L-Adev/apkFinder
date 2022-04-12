@@ -113,9 +113,7 @@ def main():
 	threadarg = args.threads
 	outputarg = args.output
 	searcharg = args.search
-
 	lookup = apksearch(searcharg,threadarg,outputarg)
-
 
 if __name__ == '__main__':
     main()
