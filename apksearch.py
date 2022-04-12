@@ -1,15 +1,21 @@
 import requests
+import sys,os
 from bs4 import BeautifulSoup
 from colorama import Fore, Back, init
+import argparse
+import concurrent.futures
 
 init(autoreset=True)
 
 
 class apksearch:
 
-	def __init__(self, searchterm):
+	def __init__(self, searchterm,threads,output):
 		self.self = self
 		self.downloadUrls = []
+		self.urlCollection = []
+		self.threads=threads
+		self.output=output
 		self.searchterm = searchterm
 		self.page = 1
 		self.useragent = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36'}
@@ -38,8 +44,21 @@ class apksearch:
 			try:
 				if searchterm in link['href']:
 					print(f"{Fore.LIGHTYELLOW_EX}Found APK url >> {Fore.LIGHTWHITE_EX}{link['href']}")
-					self.getAll(f"https://www.apkmirror.com{link['href']}")
 					urlCollection.append(link['href'])
+					with concurrent.futures.ThreadPoolExecutor(max_workers=int(self.threads)) as executor:
+						checks = {executor.submit(self.getAll, cUrl): cUrl for cUrl in self.urlCollection}
+						for future in concurrent.futures.as_completed(checks):
+							url = checks[future]
+							try:
+								self.printresult(future.result())
+							# self.updateui(future.result())
+							# data = future.result()
+							# print(data)
+							except Exception as e:
+								print(e)
+								executor.shutdown()
+					executor.shutdown()
+
 			except KeyError:
 				pass
 
@@ -72,5 +91,32 @@ class apksearch:
 			w.writeheader()
 			w.writerow(my_dict)
 
-searchterm = input('Search: ')
-apksearch(searchterm)
+
+def parse_args():
+	# parse the arguments
+	parser = argparse.ArgumentParser(epilog='\tExample: \r\npython ' + sys.argv[0] + " -d google.com -p basicscan")
+	parser.error = parser_error
+	parser._optionals.title = "OPTIONS"
+	parser.add_argument('-t', '--threads', help="Threads to use for this scan", required=False, default=50)
+	parser.add_argument('-o', '--output', help="Name of the output file (csv)", required=False, default='whisper.csv')
+	parser.add_argument('-s', '--search', help="The term to search for", required=False, default=input('Enter a search term: '))
+	return parser.parse_args()
+
+
+def parser_error(errmsg):
+	print("Usage: python " + sys.argv[0] + " [Options] use -h for help")
+	print("Error: " + errmsg)
+	sys.exit()
+
+
+def main():
+	args = parse_args()
+	threadarg = args.threads
+	outputarg = args.output
+	searcharg = args.search
+
+	lookup = apksearch(searcharg,threadarg,outputarg)
+
+
+if __name__ == '__main__':
+    main()
