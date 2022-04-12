@@ -98,7 +98,6 @@ def parse_args():
 	parser.error = parser_error
 	parser._optionals.title = "OPTIONS"
 	parser.add_argument('-t', '--threads', help="Threads to use for this scan", required=False, default=50)
-	parser.add_argument('-o', '--output', help="Name of the output file (csv)", required=False, default='whisper.csv')
 	parser.add_argument('-s', '--search', help="The term to search for", required=False, default=input('Enter a search term: '))
 	return parser.parse_args()
 
